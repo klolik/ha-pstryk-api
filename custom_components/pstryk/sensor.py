@@ -34,7 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     _LOGGER.debug("setting up sensors")
 
     entities = [
-        PstrykPriceSensor(coordinator, "price", "price")
+        PstrykPriceSensor(coordinator, "price", "Gross")
     ]
 
     async_add_entities(entities)
@@ -112,7 +112,7 @@ class PstrykPriceSensor(PstrykBaseSensor):
         super().__init__(coordinator, key, key, name)
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = None # SensorStateClass.MEASUREMENT conflicts with MONETARY
-        self._attr_native_unit_of_measurement = "zl/kWh"
+        self._attr_native_unit_of_measurement = "zł/kWh"
         self._attr_icon = "mdi:cash"
 
     @property
