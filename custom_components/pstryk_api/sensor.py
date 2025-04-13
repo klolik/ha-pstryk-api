@@ -2,9 +2,10 @@
 # vim: set fileencoding=utf-8
 # https://developers.home-assistant.io/docs/core/entity/sensor/
 
+from functools import partial
 import logging
 from datetime import datetime, timedelta
-from functools import partial
+import dateutil.tz
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -63,10 +64,11 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             _LOGGER.debug("calling %s", self.url)
             headers = {"Authorization": self.token, "Accept": "application/json"}
+            today = datetime.now().replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzutc())
             params = {
                 "resolution": "hour",
-                "window_start": "2025-04-13T00:00:00",
-                "window_end": "2025-04-14T00:00:00",
+                "window_start": today,
+                "window_end": today + timedelta(days=1),
             }
             response = await self.hass.async_add_executor_job(partial(requests.get, f"{self.url}/integrations/pricing/", params=params, headers=headers))
             response.raise_for_status()
@@ -118,7 +120,7 @@ class PstrykPriceSensor(PstrykBaseSensor):
 
     @property
     def native_value(self):
-        now_hour = datetime.now().hour
+        now_hour = datetime.utcnow().hour
         for frame in self._coordinator.data["frames"]:
             if datetime.fromisoformat(frame["start"]).hour == now_hour:
                 return frame["price_gross"]
