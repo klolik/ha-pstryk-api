@@ -23,6 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> bool:
+    """Setup integration entry"""
     _LOGGER.debug("setting up coordinator for %s", entry)
     coordinator = PstrykPricingDataUpdateCoordinator(hass, entry)
     _LOGGER.debug("awaiting coordinator first refresh %s", entry)
@@ -41,6 +42,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 
 class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
+    """Pstryk Pricing API polling coordinator"""
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.debug("initializing coordinator: %s", entry)
         super().__init__(
@@ -105,6 +107,7 @@ class PstrykBaseSensor(SensorEntity):
 
 
 class PstrykPriceSensor(PstrykBaseSensor):
+    """Price Sensor"""
     def __init__(self, coordinator: DataUpdateCoordinator, key: str, name: str) -> None:
         super().__init__(coordinator, key, key, f"{name} Price")
         #self._attr_device_class = SensorDeviceClass.POWER
