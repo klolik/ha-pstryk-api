@@ -1,7 +1,7 @@
 {
     "domain": "pstryk_api",
     "name": "Pstryk API",
-    "documentation": "https://github.com/klolik/ha-pstryk",
+    "documentation": "https://github.com/klolik/ha-pstryk-api",
     "dependencies": [],
     "codeowners": ["@klolik"],
     "requirements": [],
