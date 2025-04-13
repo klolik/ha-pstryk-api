@@ -1,4 +1,5 @@
 """Sensors for Pstryk API"""
+# vim: set fileencoding=utf-8
 # https://developers.home-assistant.io/docs/core/entity/sensor/
 
 import logging
@@ -122,10 +123,6 @@ class PstrykPriceSensor(PstrykBaseSensor):
             if datetime.fromisoformat(frame["start"]).hour == now_hour:
                 return frame["price_gross"]
         return None
-
-#    @property
-#    def icon(self) -> str:
-#        return "mdi:cash"
 
     @property
     def extra_state_attributes(self):
