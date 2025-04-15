@@ -24,7 +24,8 @@ from .const import DOMAIN, MANUFACTURER, DEFAULT_NAME, HOME_URL, DEFAULT_URL
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
+            async_add_entities: AddEntitiesCallback) -> bool:
     """Setup integration entry"""
     _LOGGER.debug("setting up coordinator for %s", entry)
     coordinator = PstrykPricingDataUpdateCoordinator(hass, entry)
@@ -36,7 +37,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     _LOGGER.debug("setting up sensors")
 
     entities = [
-        PstrykPriceSensor(coordinator, "price", "Gross")
+        PstrykPriceSensor(coordinator, "price", "Gross"),
+        PstrykPriceMinSensor(coordinator),
+        PstrykPriceMaxSensor(coordinator),
     ]
 
     async_add_entities(entities)
@@ -51,7 +54,7 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=entry.title,
-            #TODO# pricing really changes (read: shows up) once a day, but want to get data ASAP when it does
+            #TODO# pricing never really changes, it's announced once a day, but want to get data ASAP when it does
             update_interval=timedelta(seconds=7200)
         )
         self.entry = entry
@@ -59,6 +62,7 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
         self.name = entry.data[CONF_NAME]
         self.token = entry.data[CONF_TOKEN]
         self.data = None
+        self._raw_data = None
 
     async def _async_update_data(self):
         try:
@@ -70,9 +74,17 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
                 "window_start": today,
                 "window_end": today + timedelta(days=1),
             }
-            response = await self.hass.async_add_executor_job(partial(requests.get, f"{self.url}/integrations/pricing/", params=params, headers=headers))
+            response = await self.hass.async_add_executor_job(
+                partial(requests.get, f"{self.url}/integrations/pricing/", params=params, headers=headers)
+            )
             response.raise_for_status()
-            self.data = response.json()
+            self._raw_data = response.json()
+            self.data = self._raw_data
+
+            self.data["_hourly"] = {}
+            for frame in self.data["frames"]:
+                hour = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal()).hour
+                self.data["_hourly"][hour] = frame["price_gross"]
             _LOGGER.debug("received %s", self.data)
             return self.data
         except requests.exceptions.RequestException as ex:
@@ -129,3 +141,33 @@ class PstrykPriceSensor(PstrykBaseSensor):
     @property
     def extra_state_attributes(self):
         return self._coordinator.data
+
+
+class PstrykPriceMinSensor(PstrykBaseSensor):
+    """Price Min Sensor"""
+    def __init__(self, coordinator: DataUpdateCoordinator) -> None:
+        super().__init__(coordinator, "min", "min", "Gross Min")
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_state_class = None # SensorStateClass.MEASUREMENT conflicts with MONETARY
+        self._attr_native_unit_of_measurement = "zł/kWh"
+        self._attr_icon = "mdi:cash"
+
+    @property
+    def native_value(self):
+        values = self._coordinator.data["_hourly"].values()
+        return min(values)
+
+
+class PstrykPriceMaxSensor(PstrykBaseSensor):
+    """Price Max Sensor"""
+    def __init__(self, coordinator: DataUpdateCoordinator) -> None:
+        super().__init__(coordinator, "max", "max", "Gross Max")
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_state_class = None # SensorStateClass.MEASUREMENT conflicts with MONETARY
+        self._attr_native_unit_of_measurement = "zł/kWh"
+        self._attr_icon = "mdi:cash"
+
+    @property
+    def native_value(self):
+        values = self._coordinator.data["_hourly"].values()
+        return max(values)
