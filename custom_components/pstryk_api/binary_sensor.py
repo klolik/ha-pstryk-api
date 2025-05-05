@@ -6,7 +6,6 @@ import logging
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.const import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, DEFAULT_NAME
@@ -36,7 +35,7 @@ class PstrykBaseBinarySensor(BinarySensorEntity):
         super().__init__()
         _LOGGER.debug("setting up binary sensor %s", name)
         self.api_data = api_data
-        self.entity_description = BinarySensorEntityDescription(key=key, entity_category=EntityCategory.DIAGNOSTIC, name=f"{DEFAULT_NAME} {name}", has_entity_name=True)
+        self.entity_description = BinarySensorEntityDescription(key=key, name=f"{DEFAULT_NAME} {name}", has_entity_name=True)
         self._attr_name = f"{DEFAULT_NAME} {name}"
         self._attr_unique_id = f"{self.api_data.coordinator.entry.entry_id}_{key}"
         self._attr_device_info = api_data.device
