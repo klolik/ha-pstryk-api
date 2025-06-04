@@ -48,8 +48,8 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
             today = datetime.now().replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzutc())
             params = {
                 "resolution": "hour",
-                "window_start": today,
-                "window_end": today + timedelta(days=1),
+                "window_start": today.isoformat(),
+                "window_end": (today + timedelta(days=1)).isoformat(),
             }
             response = await self.hass.async_add_executor_job(
                 partial(requests.get, f"{self.url}/integrations/pricing/", params=params, headers=headers)
