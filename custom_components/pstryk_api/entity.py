@@ -41,6 +41,21 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
         self.data = None
         self._raw_data = None
 
+    @staticmethod
+    def parse_data(data):
+        data["_today"] = {}
+        data["_tomorrow"] = {}
+        today_local = datetime.now().replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzlocal())
+        tomorrow_local = today_local + timedelta(days=1)
+        for frame in data["frames"]:
+            start = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal())
+            if start.day == today_local.day:
+                data["_today"][start.hour] = frame["price_gross"]
+            if start.day == tomorrow_local.day:
+                data["_tomorrow"][start.hour] = frame["price_gross"]
+        return data
+
+
     async def _async_update_data(self):
         try:
             _LOGGER.debug("calling %s", self.url)
@@ -49,20 +64,15 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
             params = {
                 "resolution": "hour",
                 "window_start": today.isoformat(),
-                "window_end": (today + timedelta(days=1)).isoformat(),
+                "window_end": (today + timedelta(days=2)).isoformat(),
             }
             response = await self.hass.async_add_executor_job(
                 partial(requests.get, f"{self.url}/integrations/pricing/", params=params, headers=headers)
             )
             response.raise_for_status()
             self._raw_data = response.json()
-            self.data = self._raw_data
+            self.data = self.parse_data(self._raw_data)
 
-            self.data["_hourly"] = {}
-            for frame in self.data["frames"]:
-                hour = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal()).hour
-                self.data["_hourly"][hour] = frame["price_gross"]
-            _LOGGER.debug("received %s", self.data)
             return self.data
         except requests.exceptions.RequestException as ex:
             raise UpdateFailed(f"Error communicating with API: {ex}") from ex

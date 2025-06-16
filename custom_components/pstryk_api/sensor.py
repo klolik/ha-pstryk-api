@@ -56,9 +56,8 @@ class PstrykBaseSensor(SensorEntity):
     def available(self) -> bool:
         return self.api_data.coordinator.last_update_success
 
-
-class PstrykPriceSensor(PstrykBaseSensor):
-    """Price Sensor"""
+class PstrykBasePriceSensor(PstrykBaseSensor):
+    """Base Price Sensor"""
     def __init__(self, api_data: PstrykApiData, key: str, name: str) -> None:
         super().__init__(api_data, key, name)
         self._attr_device_class = SensorDeviceClass.MONETARY
@@ -66,6 +65,9 @@ class PstrykPriceSensor(PstrykBaseSensor):
         self._attr_native_unit_of_measurement = "zł/kWh"
         self._attr_icon = "mdi:cash"
 
+
+class PstrykPriceSensor(PstrykBasePriceSensor):
+    """Price Sensor"""
     @property
     def native_value(self):
         now_hour = datetime.utcnow().hour
@@ -79,31 +81,23 @@ class PstrykPriceSensor(PstrykBaseSensor):
         return self.api_data.coordinator.data
 
 
-class PstrykPriceMinSensor(PstrykBaseSensor):
+class PstrykPriceMinSensor(PstrykBasePriceSensor):
     """Price Min Sensor"""
     def __init__(self, api_data: PstrykApiData) -> None:
         super().__init__(api_data, "min", "Gross Min")
-        self._attr_device_class = SensorDeviceClass.MONETARY
-        self._attr_state_class = None # SensorStateClass.MEASUREMENT conflicts with MONETARY
-        self._attr_native_unit_of_measurement = "zł/kWh"
-        self._attr_icon = "mdi:cash"
 
     @property
     def native_value(self):
-        values = self.api_data.coordinator.data["_hourly"].values()
+        values = self.api_data.coordinator.data["_today"].values()
         return min(values)
 
 
-class PstrykPriceMaxSensor(PstrykBaseSensor):
+class PstrykPriceMaxSensor(PstrykBasePriceSensor):
     """Price Max Sensor"""
     def __init__(self, api_data: PstrykApiData) -> None:
         super().__init__(api_data, "max", "Gross Max")
-        self._attr_device_class = SensorDeviceClass.MONETARY
-        self._attr_state_class = None # SensorStateClass.MEASUREMENT conflicts with MONETARY
-        self._attr_native_unit_of_measurement = "zł/kWh"
-        self._attr_icon = "mdi:cash"
 
     @property
     def native_value(self):
-        values = self.api_data.coordinator.data["_hourly"].values()
+        values = self.api_data.coordinator.data["_today"].values()
         return max(values)
