@@ -88,8 +88,7 @@ class PstrykPriceMinSensor(PstrykBasePriceSensor):
 
     @property
     def native_value(self):
-        values = self.api_data.coordinator.data["_today"].values()
-        return min(values)
+        return self.api_data.coordinator.data["_today_min"]
 
 
 class PstrykPriceMaxSensor(PstrykBasePriceSensor):
@@ -99,5 +98,4 @@ class PstrykPriceMaxSensor(PstrykBasePriceSensor):
 
     @property
     def native_value(self):
-        values = self.api_data.coordinator.data["_today"].values()
-        return max(values)
+        return self.api_data.coordinator.data["_today_max"]
