@@ -56,6 +56,7 @@ class PstrykBaseSensor(SensorEntity):
     def available(self) -> bool:
         return self.api_data.coordinator.last_update_success
 
+
 class PstrykBasePriceSensor(PstrykBaseSensor):
     """Base Price Sensor"""
     def __init__(self, api_data: PstrykApiData, key: str, name: str) -> None:
