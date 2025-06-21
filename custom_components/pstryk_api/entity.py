@@ -43,10 +43,12 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
     @staticmethod
     def parse_data(data, now):
         """Parse out API data into internal structure"""
-        data["_today"] = {}
-        data["_tomorrow"] = {}
         today_local = now.replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzlocal())
         tomorrow_local = today_local + timedelta(days=1)
+
+        data["_today"] = {}
+        data["_tomorrow"] = {}
+
         for frame in data["frames"]:
             start = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal())
             if start.day == today_local.day:
