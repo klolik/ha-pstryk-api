@@ -4,9 +4,8 @@ from dataclasses import dataclass
 from functools import partial
 from datetime import datetime, timedelta
 import logging
-import requests
-
 import dateutil.tz
+import requests
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -42,11 +41,11 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
         self._raw_data = None
 
     @staticmethod
-    def parse_data(data):
+    def parse_data(data, now):
         """Parse out API data into internal structure"""
         data["_today"] = {}
         data["_tomorrow"] = {}
-        today_local = datetime.now().replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzlocal())
+        today_local = now.replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzlocal())
         tomorrow_local = today_local + timedelta(days=1)
         for frame in data["frames"]:
             start = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal())
@@ -66,7 +65,8 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             _LOGGER.debug("calling %s", self.url)
             headers = {"Authorization": self.token, "Accept": "application/json"}
-            today = datetime.now().replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzutc())
+            now = datetime.now()
+            today = now.replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzutc())
             params = {
                 "resolution": "hour",
                 "window_start": today.isoformat(),
@@ -77,7 +77,7 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
             )
             response.raise_for_status()
             self._raw_data = response.json()
-            self.data = self.parse_data(self._raw_data)
+            self.data = self.parse_data(self._raw_data, now)
 
             return self.data
         except requests.exceptions.RequestException as ex:
