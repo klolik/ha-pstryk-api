@@ -31,6 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
 
 
 class PstrykBaseBinarySensor(BinarySensorEntity):
+    """Base for binary sensor"""
     def __init__(self, api_data: PstrykApiData, name: str, key: str):
         super().__init__()
         _LOGGER.debug("setting up binary sensor %s", name)

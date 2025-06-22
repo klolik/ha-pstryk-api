@@ -4,9 +4,8 @@ from dataclasses import dataclass
 from functools import partial
 from datetime import datetime, timedelta
 import logging
-import requests
-
 import dateutil.tz
+import requests
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -41,28 +40,54 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
         self.data = None
         self._raw_data = None
 
+    @staticmethod
+    def parse_data(data, now):
+        """Parse out API data into internal structure"""
+        today_local = now.replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzlocal())
+        tomorrow_local = today_local + timedelta(days=1)
+
+        data["_today"] = {}
+        data["_tomorrow"] = {}
+
+        for frame in data["frames"]:
+            start = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal())
+            if start.day == today_local.day:
+                data["_today"][start.hour] = frame["price_gross"]
+            if start.day == tomorrow_local.day:
+                # filter out unknown prices for tomorrow
+                if frame["is_cheap"] is not None and frame["is_expensive"] is not None:
+                    data["_tomorrow"][start.hour] = frame["price_gross"]
+
+        data["_today_min"] = min(data["_today"].values())
+        data["_today_max"] = max(data["_today"].values())
+
+        tomorrow_prices = data["_tomorrow"].values()
+        data["_tomorrow_available"] = len(tomorrow_prices) > 0
+        data["_tomorrow_min"] = min(tomorrow_prices) if tomorrow_prices else None
+        data["_tomorrow_max"] = max(tomorrow_prices) if tomorrow_prices else None
+
+        return data
+
+
     async def _async_update_data(self):
         try:
             _LOGGER.debug("calling %s", self.url)
             headers = {"Authorization": self.token, "Accept": "application/json"}
-            today = datetime.now().replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzutc())
+            now = datetime.now()
+            today = now.replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzutc())
             params = {
                 "resolution": "hour",
                 "window_start": today.isoformat(),
-                "window_end": (today + timedelta(days=1)).isoformat(),
+                "window_end": (today + timedelta(days=2)).isoformat(),
             }
             response = await self.hass.async_add_executor_job(
                 partial(requests.get, f"{self.url}/integrations/pricing/", params=params, headers=headers)
             )
             response.raise_for_status()
             self._raw_data = response.json()
-            self.data = self._raw_data
+            _LOGGER.debug("response: %s", response.text)
+            self.data = self.parse_data(self._raw_data, now)
 
-            self.data["_hourly"] = {}
-            for frame in self.data["frames"]:
-                hour = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal()).hour
-                self.data["_hourly"][hour] = frame["price_gross"]
-            _LOGGER.debug("received %s", self.data)
             return self.data
         except requests.exceptions.RequestException as ex:
             raise UpdateFailed(f"Error communicating with API: {ex}") from ex
