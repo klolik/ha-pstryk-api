@@ -54,12 +54,18 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
             if start.day == today_local.day:
                 data["_today"][start.hour] = frame["price_gross"]
             if start.day == tomorrow_local.day:
-                data["_tomorrow"][start.hour] = frame["price_gross"]
+                # filter out unknown prices for tomorrow
+                if frame["is_cheap"] is not None and frame["is_expensive"] is not None:
+                    data["_tomorrow"][start.hour] = frame["price_gross"]
 
         data["_today_min"] = min(data["_today"].values())
         data["_today_max"] = max(data["_today"].values())
-        data["_tomorrow_min"] = min(data["_tomorrow"].values())
-        data["_tomorrow_max"] = max(data["_tomorrow"].values())
+
+        tomorrow_prices = data["_tomorrow"].values()
+        data["_tomorrow_available"] = len(tomorrow_prices) > 0
+        data["_tomorrow_min"] = min(tomorrow_prices) if tomorrow_prices else None
+        data["_tomorrow_max"] = max(tomorrow_prices) if tomorrow_prices else None
+
         return data
 
 
@@ -79,6 +85,7 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
             )
             response.raise_for_status()
             self._raw_data = response.json()
+            _LOGGER.debug("response: %s", response.text)
             self.data = self.parse_data(self._raw_data, now)
 
             return self.data
