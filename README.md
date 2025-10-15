@@ -2,7 +2,9 @@
 
 This integration implements sensors for data provided by https://pstryk.pl
 
-This may or may not work. You can install this integration to your Home Assistant using HACS.
+It may or may not work. You can install this integration to your Home Assistant using HACS.
+
+This is a personal project, not affiliated to Pstryk in any way.
 
 # Preview
 
