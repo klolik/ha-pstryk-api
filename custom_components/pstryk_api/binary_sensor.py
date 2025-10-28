@@ -44,9 +44,9 @@ class PstrykBaseBinarySensor(BinarySensorEntity):
     @property
     def is_on(self):
         """Return the state of the sensor"""
-        now_hour = datetime.utcnow().hour
+        now = datetime.utcnow()
         for frame in self.api_data.coordinator.data["frames"]:
-            if datetime.fromisoformat(frame["start"]).hour == now_hour:
+            if datetime.fromisoformat(frame["start"]) <= now < datetime.fromisoformat(frame["end"]):
                 return frame[self.entity_description.key]
         return None
 

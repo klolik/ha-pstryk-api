@@ -71,9 +71,9 @@ class PstrykPriceSensor(PstrykBasePriceSensor):
     """Price Sensor"""
     @property
     def native_value(self):
-        now_hour = datetime.utcnow().hour
+        now = datetime.utcnow()
         for frame in self.api_data.coordinator.data["frames"]:
-            if datetime.fromisoformat(frame["start"]).hour == now_hour:
+            if datetime.fromisoformat(frame["start"]) <= now < datetime.fromisoformat(frame["end"]):
                 return frame["full_price"]
         return None
 
