@@ -74,7 +74,7 @@ class PstrykPriceSensor(PstrykBasePriceSensor):
         now_hour = datetime.utcnow().hour
         for frame in self.api_data.coordinator.data["frames"]:
             if datetime.fromisoformat(frame["start"]).hour == now_hour:
-                return frame["price_gross"]
+                return frame["full_price"]
         return None
 
     @property

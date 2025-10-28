@@ -52,11 +52,11 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
         for frame in data["frames"]:
             start = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal())
             if start.day == today_local.day:
-                data["_today"][start.hour] = frame["price_gross"]
+                data["_today"][start.hour] = frame["full_price"]
             if start.day == tomorrow_local.day:
                 # filter out unknown prices for tomorrow
                 if frame["is_cheap"] is not None and frame["is_expensive"] is not None:
-                    data["_tomorrow"][start.hour] = frame["price_gross"]
+                    data["_tomorrow"][start.hour] = frame["full_price"]
 
         data["_today_min"] = min(data["_today"].values())
         data["_today_max"] = max(data["_today"].values())
