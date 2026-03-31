@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 #from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, DEFAULT_NAME
+from .const import DOMAIN, DEFAULT_NAME, FRAMES, METRICS, PRICING, FULL_PRICE
 from .entity import PstrykApiData
 
 
@@ -56,6 +56,25 @@ class PstrykBaseSensor(SensorEntity):
     def available(self) -> bool:
         return self.api_data.coordinator.last_update_success
 
+    def get_current_frame(self):
+        now = datetime.utcnow()
+        for frame in self.api_data.coordinator.data[FRAMES]:
+            if datetime.fromisoformat(frame["start"]) <= now < datetime.fromisoformat(frame["end"]):
+                return frame
+        return None
+
+    def get_current_frame_attribute(self, attr_name):
+        frame = self.get_current_frame()
+        if not frame:
+            return None
+        return frame[METRICS][PRICING].get(attr_name)
+
+    def get_metrics_pricing(self, attr_name, start, end):
+        ret = []
+        for frame in self.api_data.coordinator.data[FRAMES]:
+            if today_start <= datetime.fromisoformat(frame["start"]) and datetime.fromisoformat(frame["end"]) <= today_end:
+                ret.append(frame[METRICS][PRICING][attr_name])
+        return ret
 
 class PstrykBasePriceSensor(PstrykBaseSensor):
     """Base Price Sensor"""
@@ -71,15 +90,13 @@ class PstrykPriceSensor(PstrykBasePriceSensor):
     """Price Sensor"""
     @property
     def native_value(self):
-        now = datetime.utcnow()
-        for frame in self.api_data.coordinator.data["frames"]:
-            if datetime.fromisoformat(frame["start"]) <= now < datetime.fromisoformat(frame["end"]):
-                return frame["full_price"]
-        return None
+        return self.get_current_frame_attribute(FULL_PRICE)
 
     @property
     def extra_state_attributes(self):
-        return self.api_data.coordinator.data
+        frame = self.get_current_frame()
+        flat_frame = {f"_current_{k}": v for k, v in frame}
+        return {**self.api_data.coordinator.data, **flat_frame}
 
 
 class PstrykPriceMinSensor(PstrykBasePriceSensor):
@@ -89,8 +106,10 @@ class PstrykPriceMinSensor(PstrykBasePriceSensor):
 
     @property
     def native_value(self):
-        return self.api_data.coordinator.data["_today_min"]
-
+        today_start = now.replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzlocal())
+        today_end = today_start + timedelta(days=1)
+        prices = self.get_metrics_pricing(FULL_PRICE, today_start, today_end)
+        return min(prices)
 
 class PstrykPriceMaxSensor(PstrykBasePriceSensor):
     """Price Max Sensor"""
@@ -99,4 +118,7 @@ class PstrykPriceMaxSensor(PstrykBasePriceSensor):
 
     @property
     def native_value(self):
-        return self.api_data.coordinator.data["_today_max"]
+        today_start = now.replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzlocal())
+        today_end = today_start + timedelta(days=1)
+        prices = self.get_metrics_pricing(FULL_PRICE, today_start, today_end)
+        return max(prices)

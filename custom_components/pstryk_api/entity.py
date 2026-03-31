@@ -16,7 +16,7 @@ from homeassistant.const import (
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DEFAULT_URL
+from .const import DEFAULT_URL, METRICS, PRICING
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -50,6 +50,7 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
         data["_tomorrow"] = {}
 
         for frame in data["frames"]:
+            frame.update(frame[METRICS][PRICING])
             start = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal())
             if start.day == today_local.day:
                 data["_today"][start.hour] = frame["full_price"]
@@ -71,26 +72,36 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         try:
+            #TODO# call the update more often to pick on the next-day pricing early,
+            #TODO# but add logic to skip unnecessary API calls (retry around noon)
             _LOGGER.debug("calling %s", self.url)
             headers = {"Authorization": self.token, "Accept": "application/json"}
             now = datetime.now()
             today = now.replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzutc())
             params = {
+                "metrics": "pricing",
                 "resolution": "hour",
                 "window_start": today.isoformat(),
                 "window_end": (today + timedelta(days=2)).isoformat(),
             }
             response = await self.hass.async_add_executor_job(
-                partial(requests.get, f"{self.url}/integrations/pricing/", params=params, headers=headers)
+                partial(requests.get, f"{self.url}/integrations/meter-data/unified-metrics", params=params, headers=headers)
             )
             response.raise_for_status()
             self._raw_data = response.json()
             _LOGGER.debug("response: %s", response.text)
             self.data = self.parse_data(self._raw_data, now)
+            #TODO# self.last_successful = True
+            #TODO# self.last_success = now()
 
             return self.data
         except requests.exceptions.RequestException as ex:
-            raise UpdateFailed(f"Error communicating with API: {ex}") from ex
+            #raise UpdateFailed(f"Error communicating with API: {ex}") from ex
+            #TODO# self.last_successful = False
+            #TODO# self.last_error = now()
+            # Retain previous data across API (500) failures for as much as possible
+            LOGGER.info(f"Error communicating with API: {ex}")
+            return self.data
 
 
 @dataclass

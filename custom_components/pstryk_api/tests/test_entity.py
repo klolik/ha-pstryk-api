@@ -20,7 +20,7 @@ class SensorsTest(unittest.TestCase):
         with open(DIR + "/1-expected.json", "r", encoding="utf-8") as f:
             expected = json.load(f)
 
-        now = datetime(year=2025, month=6, day=16, hour=10, minute=11, second=12, tzinfo=dateutil.tz.tzlocal())
+        now = datetime(year=2026, month=3, day=31, hour=22, minute=11, second=12, tzinfo=dateutil.tz.tzlocal())
         output = PstrykPricingDataUpdateCoordinator.parse_data(inp, now)
 
         with open(DIR + "/1-dump.json", "w", encoding="utf-8") as f:
@@ -38,7 +38,7 @@ class SensorsTest(unittest.TestCase):
         with open(DIR + "/2-expected.json", "r", encoding="utf-8") as f:
             expected = json.load(f)
 
-        now = datetime(year=2025, month=6, day=22, hour=10, minute=11, second=12, tzinfo=dateutil.tz.tzlocal())
+        now = datetime(year=2026, month=3, day=31, hour=22, minute=11, second=12, tzinfo=dateutil.tz.tzlocal())
         output = PstrykPricingDataUpdateCoordinator.parse_data(inp, now)
 
         with open(DIR + "/2-dump.json", "w", encoding="utf-8") as f:
