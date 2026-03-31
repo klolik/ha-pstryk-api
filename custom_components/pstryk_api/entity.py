@@ -50,6 +50,7 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
         data["_tomorrow"] = {}
 
         for frame in data["frames"]:
+            frame.update(frame["metrics"]["pricing"])
             start = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal())
             if start.day == today_local.day:
                 data["_today"][start.hour] = frame["price_gross"]
@@ -76,12 +77,13 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
             now = datetime.now()
             today = now.replace(hour=0, minute=0, second=0).astimezone(dateutil.tz.tzutc())
             params = {
+                "metrics": "pricing",
                 "resolution": "hour",
                 "window_start": today.isoformat(),
                 "window_end": (today + timedelta(days=2)).isoformat(),
             }
             response = await self.hass.async_add_executor_job(
-                partial(requests.get, f"{self.url}/integrations/pricing/", params=params, headers=headers)
+                partial(requests.get, f"{self.url}/integrations/meter-data/unified-metrics", params=params, headers=headers)
             )
             response.raise_for_status()
             self._raw_data = response.json()
