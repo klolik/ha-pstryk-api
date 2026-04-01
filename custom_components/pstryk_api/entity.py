@@ -51,6 +51,7 @@ class PstrykPricingDataUpdateCoordinator(DataUpdateCoordinator):
 
         for frame in data["frames"]:
             frame.update(frame["metrics"]["pricing"])
+            del frame["metrics"]
             start = datetime.fromisoformat(frame["start"]).astimezone(dateutil.tz.tzlocal())
             if frame["price_gross"] is None:
                 continue
