@@ -7,6 +7,7 @@ from datetime import datetime
 
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import MATCH_ALL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 #from homeassistant.util import dt as dt_util
@@ -36,6 +37,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
 
 class PstrykBaseSensor(SensorEntity):
     """Base class with common attributes"""
+
+    _unrecorded_attributes = frozenset({MATCH_ALL})
 
     def __init__(self, api_data: PstrykApiData, sid: str, name: str) -> None:
         """Initialize sensor with src: json data key, sid: entity id, name: display name"""
