@@ -87,6 +87,9 @@ class PstrykPriceSensor(PstrykBasePriceSensor):
 
 class PstrykPriceMinSensor(PstrykBasePriceSensor):
     """Price Min Sensor"""
+
+    _attr_entity_registry_enabled_default = False
+
     def __init__(self, api_data: PstrykApiData) -> None:
         super().__init__(api_data, "min", "Gross Min")
 
@@ -97,6 +100,9 @@ class PstrykPriceMinSensor(PstrykBasePriceSensor):
 
 class PstrykPriceMaxSensor(PstrykBasePriceSensor):
     """Price Max Sensor"""
+
+    _attr_entity_registry_enabled_default = False
+
     def __init__(self, api_data: PstrykApiData) -> None:
         super().__init__(api_data, "max", "Gross Max")
 
