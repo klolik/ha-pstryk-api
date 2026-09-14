@@ -64,8 +64,7 @@ class PstrykBasePriceSensor(PstrykBaseSensor):
     """Base Price Sensor"""
     def __init__(self, api_data: PstrykApiData, key: str, name: str) -> None:
         super().__init__(api_data, key, name)
-        self._attr_device_class = SensorDeviceClass.MONETARY
-        self._attr_state_class = None # SensorStateClass.MEASUREMENT conflicts with MONETARY
+        self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_native_unit_of_measurement = "zł/kWh"
         self._attr_icon = "mdi:cash"
 
